@@ -59,7 +59,7 @@ chunks.display_info()
 
 ### 3. `save_av_clip`
 
-A utility function to save the data from a `Raw` object to a playable `.mp4` video file.
+A utility function to save the data from a `RawData` object to a playable `.mp4` video file.
 
 ```
 from casablanca_api.utils import save_av_clip
