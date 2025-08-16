@@ -41,7 +41,7 @@ chunks = client.predict(
 )
 ```
 
-### 2. `Raw`
+### 2. `RawData`
 
 A data-handling class that automatically loads the raw frames and audio when you request the `"chunks"` format.
 
