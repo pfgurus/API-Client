@@ -46,9 +46,9 @@ chunks = client.predict(
 A data-handling class that automatically loads the raw frames and audio when you request the `"chunks"` format.
 
 ```
-from casablanca_api import Raw
+from casablanca_api import RawData
 
-# 'chunks' is an instance of the Raw class
+# 'chunks' is an instance of the RawData class
 chunks.display_info()
 # --- Raw Chunk Information ---
 # Video Frames: 110
