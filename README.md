@@ -28,15 +28,15 @@ client = APIClient(api_key="your-secret-user-api-key")
 
 # Get a URL to the generated .mp4 file
 video_url = client.predict(
-    source_image="https://.../image.png",
-    audio="https://.../audio.mp3"
+    image_path="https://.../image.png",
+    audio_path="https://.../audio.mp3"
 )
 print(f"Video URL: {video_url}")
 
 # Or, get a Raw object containing the raw data
 chunks = client.predict(
-    source_image="https://.../image.png",
-    audio="https://.../audio.mp3",
+    image_path="https://.../image.png",
+    audio_path="https://.../audio.mp3",
     output_format="chunks"
 )
 ```
