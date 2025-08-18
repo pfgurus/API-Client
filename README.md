@@ -9,7 +9,7 @@ A simple Python client for interacting with the Casablanca AI Model API.
 Install the library directly from the private GitHub repository using `pip`. You will need a GitHub Personal Access Token with `repo` scope to authenticate.
 
 ```bash
-pip install git+https://<YOUR_GITHUB_TOKEN>@[github.com/pfgurus/API-Client.git](https://github.com/pfgurus/API-Client.git)
+pip install git+https://<YOUR-TOKEN>@github.com/pfgurus/API-Client.git
 ````
 
 ## Usage
