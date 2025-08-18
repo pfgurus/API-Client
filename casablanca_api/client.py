@@ -16,9 +16,10 @@ class APIClient:
         if not api_key:
             raise ValueError("An API key is required.")
         self.api_key = api_key
-        # The base URL for your Vercel app.
+        # The base URL for the Vercel App.
         self.base_url = base_vercel_url
 
+        # URL for the prediction code and status receiver
         self.start_prediction_url = f"{self.base_url}/api/predict"
         self.get_status_url = f"{self.base_url}/api/get-status"
 
