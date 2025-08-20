@@ -117,3 +117,27 @@ class APIClient:
                 except json.JSONDecodeError:
                     print(e.response.text)
             return None
+
+    def list_models(self, display=False):
+        """
+        Fetches the curated list of available models from the API.
+        This call does not require authentication.
+        """
+        try:
+            response = requests.get(self.list_models_url)
+            response.raise_for_status()  # Raise an exception for bad status codes
+            models = response.json()
+
+            if display and models:
+                print("Available Models:")
+                for model in models:
+                    print(f"- ID: {model['id']}, Name: {model['name']}")
+                    if 'description' in model:
+                        print(f"  Description: {model['description']}\n")
+                    else:
+                        print() 
+
+            return models
+        except requests.exceptions.RequestException as e:
+            print(f"\nAn error occurred while fetching models: {e}")
+            return None
