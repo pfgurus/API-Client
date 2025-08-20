@@ -22,6 +22,7 @@ class APIClient:
         # URL for the prediction code and status receiver
         self.start_prediction_url = f"{self.base_url}/api/predict"
         self.get_status_url = f"{self.base_url}/api/get-status"
+        self.list_models_url = f"{self.base_url}/api/list-models"
 
     def _file_to_data_uri(self, file_path):
         """Reads a local file and converts it to a Base64 data URI."""
