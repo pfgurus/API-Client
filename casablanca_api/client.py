@@ -3,12 +3,7 @@ import json
 import base64
 import mimetypes
 import os
-import os
-import base64
-import mimetypes
-import requests
 import time
-import json
 from .handle_raw import RawData
 
 class APIClient:
@@ -16,13 +11,38 @@ class APIClient:
         if not api_key:
             raise ValueError("An API key is required.")
         self.api_key = api_key
-        # The base URL for the Vercel App.
         self.base_url = base_vercel_url
 
-        # URL for the prediction code and status receiver
         self.start_prediction_url = f"{self.base_url}/api/predict"
         self.get_status_url = f"{self.base_url}/api/get-status"
         self.list_models_url = f"{self.base_url}/api/list-models"
+
+    def list_models(self, display=False):
+        """
+        Fetches the curated list of available models from the API.
+        This call does not require authentication.
+        """
+        try:
+            response = requests.get(self.list_models_url)
+            response.raise_for_status()
+            models = response.json()
+
+            if display and models:
+                print("--- Available Models ---")
+                for model in models:
+                    print(f"\nID: {model['id']}")
+                    print(f"Name: {model['name']}")
+                    if 'description' in model:
+                        print(f"Description: {model['description']}")
+                    if 'price_per_second' in model:
+                        price_per_hour = model['price_per_second'] * 3600
+                        print(f"Price: ${price_per_hour:.2f}/hour (${model['price_per_second']}/second)")
+                print("\n----------------------")
+            
+            return models
+        except requests.exceptions.RequestException as e:
+            print(f"\nAn error occurred while fetching models: {e}")
+            return None
 
     def _file_to_data_uri(self, file_path):
         """Reads a local file and converts it to a Base64 data URI."""
@@ -38,18 +58,20 @@ class APIClient:
 
         return f"data:{mime_type};base64,{encoded_data}"
 
-    def predict(self, image_path, audio_path, guidance_scale=1.0, output_format="mp4", verbose=False):
+    def predict(self, image_path, audio_path, model="default", guidance_scale=1.0, output_format="mp4", verbose=False):
         """
         Calls the prediction API asynchronously. First, it starts the prediction,
         then it polls for the result.
         """
         try:
             if verbose:
-                print("Starting prediction...")
+                print(f"Starting prediction with model: {model}...")
             image_uri = self._file_to_data_uri(image_path)
             audio_uri = self._file_to_data_uri(audio_path)
 
+            # MODIFIED: 'model' key is now included in the request body
             input_data = {
+                "model": model,
                 "source_image": image_uri,
                 "audio": audio_uri,
                 "guidance_scale": guidance_scale,
@@ -117,28 +139,4 @@ class APIClient:
                     print(json.dumps(e.response.json(), indent=2))
                 except json.JSONDecodeError:
                     print(e.response.text)
-            return None
-
-    def list_models(self, display=False):
-        """
-        Fetches the curated list of available models from the API.
-        This call does not require authentication.
-        """
-        try:
-            response = requests.get(self.list_models_url)
-            response.raise_for_status()  # Raise an exception for bad status codes
-            models = response.json()
-
-            if display and models:
-                print("Available Models:")
-                for model in models:
-                    print(f"- ID: {model['id']}, Name: {model['name']}")
-                    if 'description' in model:
-                        print(f"  Description: {model['description']}\n")
-                    else:
-                        print() 
-
-            return models
-        except requests.exceptions.RequestException as e:
-            print(f"\nAn error occurred while fetching models: {e}")
             return None
