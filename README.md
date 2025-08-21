@@ -27,14 +27,24 @@ The library provides three main components to interact with the API.
 
 This is the main class for making predictions. It handles authentication and communication with the API endpoint.
 
-Following input is possible:
+Following input is possible when using the `predict` method:
 
 
 - *image_path*: Path to your local image or a downloadable asset in common image formats.
 - *audio_path*: Path to your local audio file or a downloadable asset in common audio formats, or an `.mp4` file with extractable audio.
+- *model*: The ID or name of the model to use for prediction. Use the method below to see available models.
 - *guidance_scale*: Controls the strength of model guidance; higher values increase guidance, which may result in more pronounced effects or potential artifacts.
 - *output_format*: `mp4` returns a link to the output video; `chunks` returns the model's unformatted output for further handling.
 - *verbose*: If set to true, helpful information will be provided alongside the output.
+
+### Display available models
+
+You can display information about available models using:
+
+```python
+client = APIClient(api_key="your-secret-user-api-key")
+client.list_models(display=True)  # Prints available models and their details
+```
 
 
 
