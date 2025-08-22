@@ -30,12 +30,12 @@ This is the main class for making predictions. It handles authentication and com
 Following input is possible when using the `predict` method:
 
 
-- *image_path*: Path to your local image or a downloadable asset in common image formats.
-- *audio_path*: Path to your local audio file or a downloadable asset in common audio formats, or an `.mp4` file with extractable audio.
-- *model*: The ID or name of the model to use for prediction. Use the method below to see available models.
-- *guidance_scale*: Controls the strength of model guidance; higher values increase guidance, which may result in more pronounced effects or potential artifacts.
-- *output_format*: `mp4` returns a link to the output video; `chunks` returns the model's unformatted output for further handling.
-- *verbose*: If set to true, helpful information will be provided alongside the output.
+- `image_path`: Path to your local image or a downloadable asset in common image formats.
+- `audio_path`: Path to your local audio file or a downloadable asset in common audio formats, or an `.mp4` file with extractable audio.
+- `model`: The ID or name of the model to use for prediction. Use the method below to see available models.
+- `guidance_scale`: Controls the strength of model guidance; higher values increase guidance, which may result in more pronounced effects or potential artifacts.
+- `output_format`: `mp4` returns a link to the output video; `chunks` returns the model's unformatted output for further handling.
+- `verbose`: If set to true, helpful information will be provided alongside the output.
 
 ```python
 from casablanca_api import APIClient
@@ -84,7 +84,10 @@ chunks.display_info()
 # Audio Samples: 70400
 # ---------------------------
 ```
-### 3. `save_av_clip`
+### 3. Utility Functions
+
+#### `save_av_clip`
+
 
 A utility function to save the data from a `RawData` object to a playable `.mp4` video file.
 
@@ -95,6 +98,34 @@ from casablanca_api.utils import save_av_clip
 save_av_clip(frames, audio, "my_video.mp4")
 print("Video saved successfully!")
  ```
+
+---
+
+#### `stitch_video_stream`
+
+This utility function downloads video chunks from a list of URLs (such as those returned by the API in streaming mode) and stitches them into a single playable `.mp4` file. It uses `moviepy` for concatenation and handles temporary storage and cleanup automatically.
+
+
+- `stream`: List of URLs to video chunks (e.g., returned by the API in streaming mode)
+- `output_path`: Path to save the final stitched video
+- `verbose`: If True, prints progress information
+
+**Example usage:**
+
+```python
+chunks = client.predict(
+    image_path=LOCAL_IMAGE_PATH,
+    audio_path=LOCAL_AUDIO_PATH,
+    model="atv_stream",
+    output_format="chunks",
+    verbose=True
+)
+
+final_video_path = "final_output.mp4"
+stitch_video_stream(chunks, final_video_path, verbose=True)
+```
+
+This will download all video chunks and concatenate them into `final_output.mp4`.
 
 For the RawData class and utility functions to work, you will need the following libraries:
 
