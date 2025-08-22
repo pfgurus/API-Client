@@ -104,9 +104,16 @@ For the RawData class and utility functions to work, you will need the following
 pip install torchaudio
 ````
 - torch
+  
 ```bash
 pip install torch
 ````
+- moviepy
+
+```bash
+pip install moviepy
+````
+
 
 ## Issues
 
