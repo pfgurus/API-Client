@@ -4,7 +4,7 @@ import base64
 import mimetypes
 import os
 import time
-from handle_raw import RawData
+from .handle_raw import RawData
 
 class APIClient:
     def __init__(self, api_key, base_vercel_url="https://atv-model-api.vercel.app"):
