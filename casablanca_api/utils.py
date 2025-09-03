@@ -4,6 +4,7 @@ import requests
 import tempfile
 #from moviepy.editor import VideoFileClip, concatenate_videoclips
 from moviepy import VideoFileClip, concatenate_videoclips
+import os
 
 def save_av_clip(frames, audio, output_path, video_frame_rate=25, audio_sample_rate=16000):
         """Saves a video and audio clip with the corrected audio handling."""

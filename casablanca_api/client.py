@@ -7,11 +7,12 @@ import time
 from .handle_raw import RawData
 
 class APIClient:
-    def __init__(self, api_key, base_vercel_url="https://atv-model-api.vercel.app"):
+    def __init__(self, api_key, api_set="text_to_video", base_vercel_url="https://atv-model-api.vercel.app"):
         if not api_key:
             raise ValueError("An API key is required.")
         self.api_key = api_key
         self.base_url = base_vercel_url
+        self.api_set = api_set
 
         self.start_prediction_url = f"{self.base_url}/api/predict"
         self.get_status_url = f"{self.base_url}/api/get-status"
@@ -58,18 +59,22 @@ class APIClient:
 
         return f"data:{mime_type};base64,{encoded_data}"
 
-    def predict(self, image_path, audio_path, model="default", guidance_scale=1.0, output_format="mp4", verbose=False):
+    def predict(self, image_path=None, audio_path=None, text=None, model="default", verbose=False, **kwargs):
         """
-        Calls the appropriate prediction method based on the model name.
-        - For "atv_stream", it streams the results.
-        - For all other models, it polls and returns a single final result.
+        Main dispatcher. Calls the correct method based on the api_set attribute.
         """
-        if model == "atv_stream":
-            # Note: We are ignoring 'output_format' for the stream model
-            return self._predict_stream(image_path, audio_path, model, guidance_scale, verbose)
+        if self.api_set == "text_to_video":
+            if not text or not image_path:
+                raise ValueError("Text-to-video requires 'text' and 'image_path'.")
+            return self.generate_video_from_text(image_path, text, model, verbose=verbose, **kwargs)
         else:
-            # Call the regular method for batch predictions
-            return self._predict_batch(image_path, audio_path, model, guidance_scale, output_format, verbose)
+            if not image_path or not audio_path:
+                raise ValueError("Video generation requires 'image_path' and 'audio_path'.")
+            if model == "atv_stream":
+                return self._predict_stream(image_path, audio_path, model, verbose=verbose, **kwargs)
+            else:
+                return self._predict_batch(image_path, audio_path, model, verbose=verbose, **kwargs)
+
 
     def _predict_batch(self, image_path, audio_path, model, guidance_scale, output_format, verbose):
         """
@@ -117,7 +122,57 @@ class APIClient:
         except (requests.exceptions.RequestException, FileNotFoundError, ValueError, RuntimeError) as e:
             self._handle_exception(e)
             return None
+
+    def generate_video_from_text(self, image_path, text, model="default", voice_id="Deep_Voice_Man", language_boost=None, emotion=None, verbose=False, **kwargs):
+        """
+        Initiates the text-to-video process and polls for a single, final video URL.
+        """
+        try:
+            if verbose: print(f"Starting text-to-video generation...")
+            image_uri = self._file_to_data_uri(image_path)
             
+            input_data = {
+                "model": model,
+                "image_input": image_uri,
+                "text_input": text,
+                "voice_id": voice_id,
+                "language_boost": language_boost,
+                "emotion": emotion,
+            }
+            headers = {"Content-Type": "application/json", "Authorization": f"Bearer {self.api_key}"}
+
+            start_response = requests.post(self.start_prediction_url, headers=headers, json=input_data)
+            start_response.raise_for_status()
+            
+            prediction_id = start_response.json().get("id")
+            if not prediction_id: raise ValueError("Failed to get prediction ID from the server.")
+
+            if verbose: print(f"Process started. ID: {prediction_id}. Polling for final result...")
+
+            start_time = time.time()
+            while True:
+                status_response = requests.get(f"{self.get_status_url}?id={prediction_id}", headers=headers)
+                status_response.raise_for_status()
+                result = status_response.json()
+                status = result.get("status")
+                
+                if verbose:
+                    elapsed_time = time.time() - start_time
+                    print(f"Current status: {status} | Runtime: {elapsed_time:.2f}s", end='\r')
+                
+                if status == "succeeded":
+                    if verbose: print("\nProcess finished successfully.")
+                    # Return the final output URL
+                    return result.get("output")
+                elif status == "failed":
+                    if verbose: print("\nProcess failed.")
+                    raise RuntimeError(f"Prediction failed with error: {result.get('error')}")
+                
+                time.sleep(2) 
+        except Exception as e:
+            self._handle_exception(e)
+            raise
+
     def _predict_stream(self, image_path, audio_path, model, guidance_scale, verbose):
         """
         Yields chunk URLs as they become available.
