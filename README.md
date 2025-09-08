@@ -27,8 +27,6 @@ The library provides three main components to interact with the API.
 
 This is the main class for making predictions. It handles authentication and communication with the API endpoint.
 
-predict() modes and parameters
-
 The client supports two main workflows depending on the client's `api_set` value and which arguments you pass:
 
 - Audio+Image -> Video (default non-streaming or streaming models)
