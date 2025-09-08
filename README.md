@@ -95,8 +95,8 @@ video_url = client.predict(
     text="Hello! This is a demo of text-to-video using Casablanca.",
     model="default",
     voice_id="Deep_Voice_Man",      # optional
-    language_boost=1.2,              # optional
-    emotion="happy",               # optional
+    language_boost="German",        # optional
+    emotion="happy",                # optional
     verbose=True,
 )
 print(f"Text-to-video URL: {video_url}")
