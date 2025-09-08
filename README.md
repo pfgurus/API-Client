@@ -45,7 +45,7 @@ Common `APIClient.predict` parameters (high-level):
 Text-to-Video specific parameters (when using `api_set="text_to_video"`):
 
 - `voice_id` (str, optional): Identifier for the TTS/voice to use. Default in the client: `"Deep_Voice_Man"`.
-- `language_boost` (float or None): Boost factor to bias the TTS/model toward a particular language characteristic.
+- `language_boost` (str or None): Boost factor to bias the TTS/model toward a particular language characteristic.
 - `emotion` (str or None): Optional emotion/style hint for the generated speech or animation (model-dependent).
 
 Return values
