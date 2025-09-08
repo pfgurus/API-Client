@@ -4,7 +4,9 @@ import base64
 import mimetypes
 import os
 import time
-from .handle_raw import RawData
+
+#---uncomment to use the utils inside handle_raw---
+#from .handle_raw import RawData
 
 class APIClient:
     def __init__(self, api_key, api_set="text_to_video", base_vercel_url="https://atv-model-api.vercel.app"):
