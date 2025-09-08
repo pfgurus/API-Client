@@ -61,24 +61,27 @@ class APIClient:
 
         return f"data:{mime_type};base64,{encoded_data}"
 
-    def predict(self, image_path=None, audio_path=None, text=None, model="default", verbose=False, **kwargs):
+    def predict(self, image_path=None, audio_path=None, text=None, model="default", verbose=False, guidance_scale=1.0, **kwargs):
         """
         Main dispatcher. Calls the correct method based on the api_set attribute.
         """
-        if self.api_set == "text_to_video":
+        # Allow callers to override the client's default api_set on a per-call basis.
+        api_set = kwargs.pop("api_set", None) or self.api_set
+
+        if api_set == "text_to_video":
             if not text or not image_path:
                 raise ValueError("Text-to-video requires 'text' and 'image_path'.")
-            return self.generate_video_from_text(image_path, text, model, verbose=verbose, **kwargs)
+            return self.generate_video_from_text(image_path, text, model, verbose=verbose, guidance_scale=guidance_scale, **kwargs)
         else:
             if not image_path or not audio_path:
                 raise ValueError("Video generation requires 'image_path' and 'audio_path'.")
             if model == "atv_stream":
-                return self._predict_stream(image_path, audio_path, model, verbose=verbose, **kwargs)
+                return self._predict_stream(image_path, audio_path, model, verbose=verbose, guidance_scale=guidance_scale, **kwargs)
             else:
-                return self._predict_batch(image_path, audio_path, model, verbose=verbose, **kwargs)
+                return self._predict_batch(image_path, audio_path, model, verbose=verbose, guidance_scale=guidance_scale, **kwargs)
 
 
-    def _predict_batch(self, image_path, audio_path, model, guidance_scale, output_format, verbose):
+    def _predict_batch(self, image_path, audio_path, model, verbose, output_format="mp4", guidance_scale=1.0, **kwargs):
         """
         Predict logic for non-streaming models. Polls for a single result.
         """
@@ -88,9 +91,13 @@ class APIClient:
             audio_uri = self._file_to_data_uri(audio_path)
 
             input_data = {
-                "model": model, "source_image": image_uri, "audio": audio_uri,
-                "guidance_scale": guidance_scale, "output_format": output_format
+            "model": model,
+            "image_input": image_uri,
+            "audio_input": audio_uri,
+            "guidance_scale": guidance_scale,
+            "output_format": output_format
             }
+
             headers = {"Content-Type": "application/json", "Authorization": f"Bearer {self.api_key}"}
 
             start_response = requests.post(self.start_prediction_url, headers=headers, json=input_data)
@@ -115,7 +122,19 @@ class APIClient:
                 if status == "succeeded":
                     if verbose: print("\nPrediction succeeded!")
                     output_url = result.get("output")
-                    return RawData(data_url=output_url) if output_format == "chunks" else output_url
+                    if output_format == "chunks":
+                        # Lazily import RawData to avoid requiring the utility at module import time.
+                        try:
+                            from .handle_raw import RawData
+                        except Exception as import_err:
+                            raise ImportError(
+                                "RawData is not available. Uncomment `from .handle_raw import RawData` "
+                                "near the top of `casablanca_api/client.py` or ensure `casablanca_api.handle_raw` "
+                                "is present and importable before calling predict(..., output_format='chunks')."
+                            ) from import_err
+                        return RawData(data_url=output_url)
+                    else:
+                        return output_url
                 elif status == "failed":
                     if verbose: print("\nPrediction failed.")
                     raise RuntimeError(f"Prediction failed with error: {result.get('error')}")
@@ -125,7 +144,7 @@ class APIClient:
             self._handle_exception(e)
             return None
 
-    def generate_video_from_text(self, image_path, text, model="default", voice_id="Deep_Voice_Man", language_boost=None, emotion=None, verbose=False, **kwargs):
+    def generate_video_from_text(self, image_path, text, model="default", voice_id="Deep_Voice_Man", language_boost=None, emotion=None, verbose=False, guidance_scale=1.0, **kwargs):
         """
         Initiates the text-to-video process and polls for a single, final video URL.
         """
@@ -135,11 +154,13 @@ class APIClient:
             
             input_data = {
                 "model": model,
+                "api_set": "text_to_video",
                 "image_input": image_uri,
                 "text_input": text,
                 "voice_id": voice_id,
                 "language_boost": language_boost,
                 "emotion": emotion,
+                "guidance_scale": guidance_scale,
             }
             headers = {"Content-Type": "application/json", "Authorization": f"Bearer {self.api_key}"}
 
@@ -175,7 +196,7 @@ class APIClient:
             self._handle_exception(e)
             raise
 
-    def _predict_stream(self, image_path, audio_path, model, guidance_scale, verbose):
+    def _predict_stream(self, image_path, audio_path, model, verbose, guidance_scale=1.0, output_format="mp4", **kwargs):
         """
         Yields chunk URLs as they become available.
         """
@@ -184,7 +205,13 @@ class APIClient:
             image_uri = self._file_to_data_uri(image_path)
             audio_uri = self._file_to_data_uri(audio_path)
 
-            input_data = {"model": model, "source_image": image_uri, "audio": audio_uri, "guidance_scale": guidance_scale}
+            input_data = {
+            "model": model,
+            "image_input": image_uri,
+            "audio_input": audio_uri,
+            "guidance_scale": guidance_scale,
+            "output_format": output_format
+            }
             headers = {"Content-Type": "application/json", "Authorization": f"Bearer {self.api_key}"}
 
             start_response = requests.post(self.start_prediction_url, headers=headers, json=input_data)
